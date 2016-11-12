@@ -9,19 +9,31 @@ import spark.template.handlebars.HandlebarsTemplateEngine;
 import java.util.HashMap;
 import java.util.Map;
 
-import static spark.Spark.get;
-import static spark.Spark.post;
-import static spark.Spark.staticFileLocation;
+import static spark.Spark.*;
 
-/**
- * Created by kylederrick on 11/11/16.
- */
+
 public class Main {
     public static void main(String[] args) {
 
         staticFileLocation("/public");
 
         CourseIdeaDAO dao = new SimpleCourseIdeaDAO();
+
+        before((req, res) -> {
+            if (req.cookie("username") != null) {
+                req.attribute("username", req.cookie("username"));
+            }
+        });
+
+        before("/ideas", (req, res) -> {
+            //TODO: SEND MESSAGE ABOUT REDIRECT TO USER
+
+            if (req.attribute("username") == null) {
+                res.redirect("/");
+                halt();
+
+            }
+        });
 
         get("/", (req, res) -> {
             Map<String, String> model = new HashMap<>();
@@ -34,8 +46,9 @@ public class Main {
             String username = req.queryParams("username");
             res.cookie("username", username);
             model.put("username", username);
-            return new ModelAndView(model, "sign-in.hbs");
-        }, new HandlebarsTemplateEngine());
+            res.redirect("/");
+            return null;
+        });
 
         get("/ideas", (req, res) -> {
             Map<String, Object> model = new HashMap<>();
